@@ -25,10 +25,10 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v7
 
-      - name: Install Podman
+      - name: Install Podman and jq
         run: |
           sudo apt-get update
-          sudo apt-get -y install podman
+          sudo apt-get -y install podman jq
 
       - name: Log into Container Registry
         run: |
@@ -50,10 +50,21 @@ jobs:
           IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
           podman push ${IMAGE}
 
+      - name: Build compact SBOM
+        run: |
+          mkdir sbom
+          jq -c <sbom.cdx.json >sbom-out/sbom.cdx.json
+          cat sbom-out/sbom.cdx.json
+
+    - name: Validate SBOM
+      run: |
+          podman run --volume $(pwd)/sbom-out:/sbom:ro cyclonedx/cyclonedx-cli \
+              validate --input-file /sbom/sbom.cdx.json --fail-on-errors
+      
       - name: Attest SBOM
         uses: actions/attest@v4
         with:
-          sbom-path: sbom.cdx.json
+          sbom-path: sbom-out/sbom.cdx.json
           subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           subject-digest: ${{ steps.extract-digest.outputs.digest }}
           push-to-registry: true
