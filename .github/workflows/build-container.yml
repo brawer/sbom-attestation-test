@@ -52,7 +52,7 @@ jobs:
 
       - name: Build compact SBOM
         run: |
-          mkdir sbom
+          mkdir sbom-out
           jq -c <sbom.cdx.json >sbom-out/sbom.cdx.json
           cat sbom-out/sbom.cdx.json
 
