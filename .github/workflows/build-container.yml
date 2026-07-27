@@ -1,0 +1,66 @@
+name: Build
+
+on:
+  push:
+    branches: [ "main" ]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+permissions: {}
+
+jobs:
+  build-container:
+    name: Build (container)
+    runs-on: ubuntu-latest
+    permissions:
+      artifact-metadata: write
+      attestations: write
+      contents: read
+      id-token: write
+      packages: write
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Install Podman
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install podman
+
+      - name: Log into Container Registry
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | podman login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
+
+      - name: Build container image
+        run: |
+          IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          podman build --file ./Containerfile --squash ${IMAGE}
+
+      - name: Extract digest
+        id: extract-digest
+        run: |
+          IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          echo digest=`podman inspect --format '{{.Digest}}' ${IMAGE}` >> $GITHUB_OUTPUT
+
+      - name: Push container image
+        run: |
+          IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          podman push ${IMAGE}
+
+      - name: Attest SBOM
+        uses: actions/attest@v4
+        with:
+          sbom-path: sbom.cdx.json
+          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          subject-digest: ${{ steps.extract-digest.outputs.digest }}
+          push-to-registry: true
+
+      - name: Attest build provenance
+        uses: actions/attest@v4
+        with:
+          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          subject-digest: ${{ steps.extract-digest.outputs.digest }}
+          push-to-registry: true
