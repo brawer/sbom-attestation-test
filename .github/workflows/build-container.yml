@@ -46,16 +46,13 @@ jobs:
           IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
           podman build --file ./Containerfile --squash --tag ${IMAGE}
 
-      - name: Extract digest
-        id: extract-digest
-        run: |
-          IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-          echo digest=`podman inspect --format '{{.Digest}}' ${IMAGE}` >> $GITHUB_OUTPUT
-
       - name: Push container image
+        id: push-container
         run: |
           IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-          podman push ${IMAGE}
+          podman push ${IMAGE} --digestfile=digest.txt
+          echo digest=`cat digest.txt`
+          echo digest=`cat digest.txt` >> $GITHUB_OUTPUT
 
       - name: Build SBOM
         run: |
@@ -75,12 +72,11 @@ jobs:
         with:
           sbom-path: sbom-out/sbom.cdx.json
           subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          subject-digest: ${{ steps.extract-digest.outputs.digest }}
-          push-to-registry: true
+          subject-digest: ${{ steps.push-container.outputs.digest }}
 
       - name: Attest build provenance
         uses: actions/attest@v4
         with:
           subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          subject-digest: ${{ steps.extract-digest.outputs.digest }}
+          subject-digest: ${{ steps.push-container.outputs.digest }}
           push-to-registry: true
