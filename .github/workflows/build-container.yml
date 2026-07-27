@@ -37,7 +37,7 @@ jobs:
       - name: Build container image
         run: |
           IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-          podman build --file ./Containerfile --squash ${IMAGE}
+          podman build --file ./Containerfile --squash --tag ${IMAGE}
 
       - name: Extract digest
         id: extract-digest
