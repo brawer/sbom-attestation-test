@@ -30,9 +30,16 @@ jobs:
           sudo apt-get update
           sudo apt-get -y install podman jq
 
-      - name: Log into Container Registry
+      - name: Log into Container Registry with Podman
         run: |
           echo "${{ secrets.GITHUB_TOKEN }}" | podman login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
+
+      - name: Log into Container Registry with Docker
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build container image
         run: |
