@@ -50,10 +50,12 @@ jobs:
           IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
           podman push ${IMAGE}
 
-      - name: Build compact SBOM
+      - name: Build SBOM
         run: |
+          # actions/attest enforces presence of a "serialNumber" field in CycloneDX SBOMs.
+          UUID="urn:uuid:$(uuidgen | tr '[:upper:]' '[:lower:]')"
           mkdir sbom-out
-          jq -c <sbom.cdx.json >sbom-out/sbom.cdx.json
+          jq -c  --arg uuid ${UUID} '. + {serialNumber: $uuid}' <sbom.cdx.json >sbom-out/sbom.cdx.json
           cat sbom-out/sbom.cdx.json
 
       - name: Validate SBOM
