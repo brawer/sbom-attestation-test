@@ -73,6 +73,7 @@ jobs:
           sbom-path: sbom-out/sbom.cdx.json
           subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           subject-digest: ${{ steps.push-container.outputs.digest }}
+          push-to-registry: true
 
       - name: Attest build provenance
         uses: actions/attest@v4
