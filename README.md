@@ -11,6 +11,9 @@ While the test container is not actually vulnerable (it just contains this READM
 tools such as [grype](https://github.com/anchore/grype/) should detect and report
 a high-risk vulnerability when scanning this container. As of July 2026,
 no vulnerability gets reported because `grype` does not find the SBOM.
+See https://github.com/anchore/grype/issues/3604 for a feature request
+to implement this in Grype.
+
 
 ## To reproduce
 
